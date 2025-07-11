@@ -30,6 +30,20 @@ public interface JobControllerApi {
 				schema = @Schema(implementation = JobRequest.class),
 				examples = {
 					@ExampleObject(
+							name = "Alpine minimal echo Job",
+							summary = "Hello World Job",
+							value = """
+							{
+							  "imageName": "alpine",
+							  "command": [
+							    "sh",
+							    "-c",
+							    "echo Hello, World"
+							  ]
+							}
+							"""
+						),						
+					@ExampleObject(
 						name = "Minimal Job",
 						summary = "Only image name",
 						value = """
