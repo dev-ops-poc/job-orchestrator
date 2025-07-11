@@ -1,0 +1,138 @@
+# Storage Class 
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: batch-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: Immediate
+---
+# Static Persistent Volume (acts like NFS)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: batch-storage-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: batch-storage
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /tmp/batch-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: batch-storage-pvc
+  namespace: batch-export
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: batch-storage
+---
+# --- ServiceAccount ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orchestrator-sa
+  namespace: batch-export
+  labels:
+    app: job-orchestrator
+
+---
+
+# --- Role ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: orchestrator-role
+  namespace: batch-export
+  labels:
+    app: job-orchestrator
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list", "get"]
+
+---
+
+# --- RoleBinding ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: orchestrator-role-binding
+  namespace: batch-export
+  labels:
+    app: job-orchestrator
+subjects:
+  - kind: ServiceAccount
+    name: orchestrator-sa
+    namespace: batch-export
+roleRef:
+  kind: Role
+  name: orchestrator-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+# --- Orchestrator Deployment ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: job-orchestrator
+  namespace: batch-export
+  labels:
+    app: job-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: job-orchestrator
+  template:
+    metadata:
+      labels:
+        app: job-orchestrator
+    spec:
+      serviceAccountName: orchestrator-sa
+      containers:
+        - name: orchestrator
+          image: devstackhub/job-orchestrator:20250704.082213.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms256m -Xmx512m"
+          volumeMounts:
+            - name: nfs-storage
+              mountPath: /mnt/nfs/output
+      volumes:
+        - name: nfs-storage
+          persistentVolumeClaim:
+            claimName: batch-storage-pvc
+
+---
+
+# --- Orchestrator Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: job-orchestrator-service
+  namespace: batch-export
+  labels:
+    app: job-orchestrator
+spec:
+  selector:
+    app: job-orchestrator
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
