@@ -3,7 +3,6 @@ package com.comprosoft.service;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -85,26 +84,23 @@ public class JobOrchestratorService {
 
 	private String getK8sSafeJobName(String imageName) {
 		final int MAX_TOTAL_LENGTH = 63;
-		final String suffix = "-" + UUID.randomUUID().toString().substring(0, 8);
 
 		// Extract only the image name and tag (ignore registry)
 		String[] parts = imageName.split("/");
 		String nameAndTag = parts[parts.length - 1]; // e.g., data-processor:1.0.0
 
-		String base = "job-" + nameAndTag
+		String jobName = "job-" + nameAndTag
 			.replaceAll("[^a-zA-Z0-9]", "-")   // replace special characters
 			.toLowerCase()
 			.replaceAll("-+", "-")             // collapse multiple dashes
 			.replaceAll("(^-|-$)", "");        // trim dashes
 
-		int maxBaseLength = MAX_TOTAL_LENGTH - suffix.length();
-		if (base.length() > maxBaseLength) {
-			base = base.substring(0, maxBaseLength);
+		if (jobName.length() > MAX_TOTAL_LENGTH) {
+			jobName = jobName.substring(0, MAX_TOTAL_LENGTH);
 		}
 
-		String finalName = base + suffix;
-		log.debug("Generated job name from image '{}': {}", imageName, finalName);
-		return finalName;
+		log.debug("Generated job name from image '{}': {}", imageName, jobName);
+		return jobName;
 	}
 
 }
