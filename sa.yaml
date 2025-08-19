@@ -1,0 +1,45 @@
+# --- ServiceAccount ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orchestrator-sa
+  namespace: dev
+  labels:
+    app: job-orchestrator
+
+---
+
+# --- Role ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: orchestrator-role
+  namespace: dev
+  labels:
+    app: job-orchestrator
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list", "get"]
+
+---
+
+# --- RoleBinding ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: orchestrator-role-binding
+  namespace: dev
+  labels:
+    app: job-orchestrator
+subjects:
+  - kind: ServiceAccount
+    name: orchestrator-sa
+    namespace: dev
+roleRef:
+  kind: Role
+  name: orchestrator-role
+  apiGroup: rbac.authorization.k8s.io

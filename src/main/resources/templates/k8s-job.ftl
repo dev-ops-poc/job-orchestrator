@@ -2,6 +2,9 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: ${jobName}
+  labels:
+    app.kubernetes.io/instance: job-orchestrator-instance
+    app.kubernetes.io/name: job-orchestrator  
 spec:
   ttlSecondsAfterFinished: 120
   template:
