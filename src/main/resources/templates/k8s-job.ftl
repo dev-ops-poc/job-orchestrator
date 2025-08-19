@@ -4,7 +4,9 @@ metadata:
   name: ${jobName}
   labels:
     app.kubernetes.io/instance: job-orchestrator-instance
-    app.kubernetes.io/name: job-orchestrator  
+    app.kubernetes.io/name: job-orchestrator
+    app.kubernetes.io/part-of: job-orchestrator
+    
 spec:
   ttlSecondsAfterFinished: 120
   template:
