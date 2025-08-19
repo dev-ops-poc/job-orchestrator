@@ -16,6 +16,7 @@ jobs:
       DOCKER_IMAGE_PUSH_PREFIX: ${{ vars.DOCKER_IMAGE_PUSH_PREFIX }}
       OCI_REG_USER: ${{ vars.OCI_REG_USER }}
       OCI_REG_PASSWORD: ${{ secrets.OCI_REG_PASSWORD }}    
+      SERVICE_ACCOUNT_NAME: orchestrator-sa
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
